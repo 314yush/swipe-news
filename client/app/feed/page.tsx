@@ -73,9 +73,9 @@ function FeedPage() {
         try {
           // Feed page: show news from last 24 hours for browsing
           const rssNews = await fetchAndUpdateNews(undefined, 24 * 60);
-          if (rssNews.length > 0) {
-            setFeedNews(rssNews);
-            console.log(`[Feed Page] Loaded ${rssNews.length} news items (24hr window)`);
+          if (rssNews.items.length > 0) {
+            setFeedNews(rssNews.items);
+            console.log(`[Feed Page] Loaded ${rssNews.items.length} news items (24hr window)`);
           }
         } catch (error) {
           console.error('Error loading RSS news:', error);
@@ -104,9 +104,9 @@ function FeedPage() {
         currentCategory === 'Trending' ? undefined : currentCategory,
         24 * 60
       );
-      if (rssNews.length > 0) {
-        setFeedNews(rssNews);
-        console.log(`[Feed Page] Refreshed ${rssNews.length} news items (24hr window)`);
+      if (rssNews.items.length > 0) {
+        setFeedNews(rssNews.items);
+        console.log(`[Feed Page] Refreshed ${rssNews.items.length} news items (24hr window)`);
       }
     } catch (error) {
       console.error('Error refreshing news:', error);

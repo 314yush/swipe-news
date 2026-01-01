@@ -183,8 +183,8 @@ const RSS_FEEDS = [
 ];
 
 interface RSSItem {
-  title?: string;
-  description?: string;
+  title?: string | null;
+  description?: string | null;
   link?: string;
   pubDate?: string;
   isoDate?: string;

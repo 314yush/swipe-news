@@ -120,7 +120,7 @@ export default function RootLayout({
               externalWallets: {
                 // MetaMask, WalletConnect, Coinbase Wallet, etc.
                 coinbaseWallet: {
-                  connectionOptions: "smartWalletOnly",
+                  // Coinbase Wallet configuration
                 },
               },
               appearance: {
@@ -136,7 +136,6 @@ export default function RootLayout({
                   // Enable gas sponsorship for embedded wallets
                   // This allows the app to pay for gas on behalf of users
                   // Note: Requires Privy gas sponsorship to be enabled in Privy dashboard
-                  noPromptOnSignature: false, // Keep false to show signing popup (required for security)
                 },
               },
               // Enable gas sponsorship if configured

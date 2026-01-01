@@ -1,0 +1,161 @@
+{
+  "BTC/USD": {
+    "keywords": ["bitcoin", "btc", "satoshi", "nakamoto", "halving", "mining", "hash rate", "btc etf", "bitcoin etf", "saylor", "microstrategy"],
+    "priority": 3
+  },
+  "ETH/USD": {
+    "keywords": ["ethereum", "eth", "vitalik", "buterin", "ether", "eip", "merge", "staking", "eth2", "layer 2", "rollup", "eth etf", "ethereum etf"],
+    "priority": 3
+  },
+  "SOL/USD": {
+    "keywords": ["solana", "sol", "anatoly", "yakovenko", "solana labs", "phantom wallet", "jupiter dex"],
+    "priority": 3
+  },
+  "BNB/USD": {
+    "keywords": ["binance", "bnb", "cz", "changpeng zhao", "binance coin", "bsc", "bnb chain"],
+    "priority": 2
+  },
+  "XRP/USD": {
+    "keywords": ["xrp", "ripple", "sec lawsuit", "brad garlinghouse", "ripple labs"],
+    "priority": 2
+  },
+  "ADA/USD": {
+    "keywords": ["cardano", "ada", "charles hoskinson", "iohk", "vasil"],
+    "priority": 2
+  },
+  "DOGE/USD": {
+    "keywords": ["dogecoin", "doge", "shiba", "meme coin", "elon musk doge"],
+    "priority": 2
+  },
+  "AVAX/USD": {
+    "keywords": ["avalanche", "avax", "ava labs", "emin gun sirer"],
+    "priority": 2
+  },
+  "MATIC/USD": {
+    "keywords": ["polygon", "matic", "layer 2", "polygon labs", "sandeep nailwal"],
+    "priority": 2
+  },
+  "LINK/USD": {
+    "keywords": ["chainlink", "link", "oracle", "sergey nazarov", "ccip"],
+    "priority": 2
+  },
+  "ARB/USD": {
+    "keywords": ["arbitrum", "arb", "offchain labs", "l2", "layer 2 arbitrum"],
+    "priority": 2
+  },
+  "OP/USD": {
+    "keywords": ["optimism", "op token", "op chain", "superchain", "op stack"],
+    "priority": 2
+  },
+  "PEPE/USD": {
+    "keywords": ["pepe", "pepe coin", "pepe meme", "frog meme"],
+    "priority": 2
+  },
+  "SHIB/USD": {
+    "keywords": ["shiba inu", "shib", "shiba", "shibarium"],
+    "priority": 2
+  },
+  "WIF/USD": {
+    "keywords": ["dogwifhat", "wif", "dog wif hat"],
+    "priority": 2
+  },
+  "AAPL/USD": {
+    "keywords": ["apple", "aapl", "iphone", "tim cook", "mac", "ipad", "ios", "app store", "vision pro", "airpods", "macbook"],
+    "priority": 3
+  },
+  "MSFT/USD": {
+    "keywords": ["microsoft", "msft", "satya nadella", "windows", "azure", "office", "xbox", "bing", "copilot", "teams"],
+    "priority": 3
+  },
+  "GOOGL/USD": {
+    "keywords": ["google", "googl", "alphabet", "sundar pichai", "android", "youtube", "chrome", "search", "gemini ai", "waymo", "cloud"],
+    "priority": 3
+  },
+  "AMZN/USD": {
+    "keywords": ["amazon", "amzn", "andy jassy", "jeff bezos", "aws", "prime", "alexa", "whole foods", "kindle"],
+    "priority": 3
+  },
+  "NVDA/USD": {
+    "keywords": ["nvidia", "nvda", "jensen huang", "gpu", "geforce", "rtx", "cuda", "ai chip", "h100", "a100", "blackwell"],
+    "priority": 3
+  },
+  "META/USD": {
+    "keywords": ["meta", "facebook", "mark zuckerberg", "instagram", "whatsapp", "metaverse", "threads", "oculus", "quest"],
+    "priority": 3
+  },
+  "TSLA/USD": {
+    "keywords": ["tesla", "tsla", "elon musk", "ev", "electric vehicle", "model 3", "model y", "cybertruck", "gigafactory", "fsd", "autopilot"],
+    "priority": 3
+  },
+  "AMD/USD": {
+    "keywords": ["amd", "lisa su", "ryzen", "radeon", "epyc", "xilinx", "mi300"],
+    "priority": 2
+  },
+  "NFLX/USD": {
+    "keywords": ["netflix", "nflx", "streaming", "reed hastings", "ted sarandos"],
+    "priority": 2
+  },
+  "COIN/USD": {
+    "keywords": ["coinbase", "coin stock", "brian armstrong", "crypto exchange"],
+    "priority": 2
+  },
+  "XAU/USD": {
+    "keywords": ["gold", "gold price", "gold futures", "precious metal", "bullion", "gold etf", "safe haven"],
+    "priority": 2
+  },
+  "XAG/USD": {
+    "keywords": ["silver", "silver price", "silver futures", "precious metal silver"],
+    "priority": 2
+  },
+  "USOILSPOT/USD": {
+    "keywords": ["oil", "crude oil", "wti", "oil price", "opec", "petroleum", "brent", "oil futures", "energy crisis"],
+    "priority": 2
+  },
+  "EUR/USD": {
+    "keywords": ["euro", "eur", "ecb", "european central bank", "lagarde", "eurozone"],
+    "priority": 2
+  },
+  "USD/JPY": {
+    "keywords": ["yen", "jpy", "boj", "bank of japan", "ueda", "japanese yen"],
+    "priority": 2
+  },
+  "GBP/USD": {
+    "keywords": ["pound", "gbp", "sterling", "bank of england", "boe", "british pound"],
+    "priority": 2
+  },
+  "SPX/USD": {
+    "keywords": ["s&p 500", "sp500", "spx", "s&p", "spy"],
+    "priority": 2
+  },
+  "NDX/USD": {
+    "keywords": ["nasdaq", "nasdaq 100", "qqq", "tech stocks", "ndx"],
+    "priority": 2
+  },
+  "PLTR/USD": {
+    "keywords": ["palantir", "pltr", "alex karp", "data analytics"],
+    "priority": 2
+  },
+  "UBER/USD": {
+    "keywords": ["uber", "dara khosrowshahi", "ride sharing", "uber eats"],
+    "priority": 2
+  },
+  "SHOP/USD": {
+    "keywords": ["shopify", "shop stock", "tobi lutke", "ecommerce platform"],
+    "priority": 2
+  },
+  "SQ/USD": {
+    "keywords": ["block", "square", "sq stock", "jack dorsey", "cash app"],
+    "priority": 2
+  },
+  "RBLX/USD": {
+    "keywords": ["roblox", "rblx", "gaming platform", "david baszucki"],
+    "priority": 2
+  },
+  "INTC/USD": {
+    "keywords": ["intel", "intc", "pat gelsinger", "chip maker", "x86"],
+    "priority": 2
+  }
+}
+
+
+

@@ -244,7 +244,7 @@ function SwipePage() {
         collateral: optimalParams.collateral, // Always minimum
         leverage: optimalParams.leverage, // Always maximum
         userId,
-      });
+      }) as any;
 
       // Convert transaction to Privy format (EIP-1559 with hex strings)
       const unsignedTx = txData.transaction;

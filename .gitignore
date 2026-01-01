@@ -47,6 +47,8 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+# Don't ignore client/lib (it's part of the Next.js app)
+!client/lib/
 
 # Environment variables
 .env
