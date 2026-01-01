@@ -233,6 +233,23 @@ Make sure you've created a `.env.local` file in the `client` directory with your
 2. Ensure you've run all migrations in order
 3. Check that Edge Functions are deployed if using cloud Supabase
 
+## Deployment
+
+### Deploying to Vercel
+
+The client/UI can be deployed to Vercel for production. See [VERCEL_DEPLOYMENT.md](./VERCEL_DEPLOYMENT.md) for detailed instructions.
+
+**Quick Start:**
+1. Deploy the trading service separately (Railway, Render, or your own server)
+2. Get your trading service URL
+3. Deploy to Vercel:
+   - Import your GitHub repo
+   - Set root directory to `client`
+   - Add environment variables (see VERCEL_DEPLOYMENT.md)
+   - Deploy!
+
+**Important**: Make sure to set `TRADING_SERVICE_URL` environment variable in Vercel to point to your deployed trading service.
+
 ## License
 
 MIT

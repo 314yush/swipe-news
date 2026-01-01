@@ -17,9 +17,17 @@ from trader_privy import AvantisTraderPrivy, PositionSide, TradeResult
 app = FastAPI(title="SwipeTrader Trading Service")
 
 # CORS middleware
+# Allow origins from environment variable or default to all (for development)
+ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "*")
+if ALLOWED_ORIGINS == "*":
+    allowed_origins = ["*"]
+else:
+    # Split comma-separated origins
+    allowed_origins = [origin.strip() for origin in ALLOWED_ORIGINS.split(",")]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, restrict this
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
