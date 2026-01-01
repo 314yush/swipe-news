@@ -53,6 +53,7 @@ interface AvantisDataResponse {
     };
   };
   success: boolean;
+  error?: string; // Optional error message
 }
 
 interface PairCacheEntry {
