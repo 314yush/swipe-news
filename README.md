@@ -240,15 +240,28 @@ Make sure you've created a `.env.local` file in the `client` directory with your
 The client/UI can be deployed to Vercel for production. See [VERCEL_DEPLOYMENT.md](./VERCEL_DEPLOYMENT.md) for detailed instructions.
 
 **Quick Start:**
-1. Deploy the trading service separately (Railway, Render, or your own server)
-2. Get your trading service URL
-3. Deploy to Vercel:
+1. **Option A - Local Trading Service** (Development):
+   - Keep trading service running locally
+   - Use ngrok/localtunnel to expose it
+   - See [LOCAL_TRADING_SERVICE.md](./LOCAL_TRADING_SERVICE.md) for details
+
+2. **Option B - Deploy Trading Service** (Production):
+   - Deploy trading service separately (Railway, Render, or your own server)
+   - Get your trading service URL
+
+3. **Deploy Client to Vercel**:
    - Import your GitHub repo
    - Set root directory to `client`
-   - Add environment variables (see VERCEL_DEPLOYMENT.md)
+   - Add environment variables:
+     - `NEXT_PUBLIC_PRIVY_APP_ID` (required)
+     - `TRADING_SERVICE_URL` (your tunnel URL or deployed service URL)
+     - See [VERCEL_DEPLOYMENT.md](./VERCEL_DEPLOYMENT.md) for full list
    - Deploy!
 
-**Important**: Make sure to set `TRADING_SERVICE_URL` environment variable in Vercel to point to your deployed trading service.
+**Important**: 
+- Make sure to set `TRADING_SERVICE_URL` environment variable in Vercel
+- Configure CORS on your trading service to allow your Vercel domain
+- For production, deploy the trading service rather than using a tunnel
 
 ## License
 

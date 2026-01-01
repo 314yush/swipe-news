@@ -16,11 +16,94 @@ When deployed to Vercel:
 3. **Trading Service**: Deploy the Python service separately (see below)
 4. **Supabase Project**: Set up at [supabase.com](https://supabase.com)
 
-## Step 1: Deploy Trading Service
+## Step 1: Set Up Trading Service
 
-The Python trading service needs to be deployed separately. Options:
+You have two options for the trading service:
 
-### Option A: Railway
+### Option A: Keep Trading Service Local (Recommended for Development)
+
+If you want to keep the trading service running locally while deploying the client to Vercel, you'll need to expose your local service to the internet using a tunnel.
+
+#### Using ngrok (Recommended)
+
+1. **Install ngrok**:
+   ```bash
+   # macOS
+   brew install ngrok
+   
+   # Or download from https://ngrok.com/download
+   ```
+
+2. **Start your local trading service**:
+   ```bash
+   cd server/trading-service
+   source venv/bin/activate
+   uvicorn main:app --reload --port 8000
+   ```
+
+3. **Create ngrok tunnel**:
+   ```bash
+   ngrok http 8000
+   ```
+
+4. **Copy the HTTPS URL** (e.g., `https://abc123.ngrok.io`)
+   - This URL will be your `TRADING_SERVICE_URL` in Vercel
+   - **Note**: Free ngrok URLs change on restart. For production, consider:
+     - ngrok paid plan (static domain)
+     - localtunnel (free alternative)
+     - Cloudflare Tunnel (free, static)
+
+5. **Update CORS** in `server/trading-service/main.py`:
+   ```python
+   allow_origins=[
+       "https://your-app.vercel.app",
+       "https://your-app-*.vercel.app",
+       "http://localhost:3000",
+   ]
+   ```
+
+#### Using localtunnel (Free Alternative)
+
+1. **Install localtunnel**:
+   ```bash
+   npm install -g localtunnel
+   ```
+
+2. **Start your local trading service** (port 8000)
+
+3. **Create tunnel**:
+   ```bash
+   lt --port 8000
+   ```
+
+4. **Copy the URL** provided (e.g., `https://random-name.loca.lt`)
+
+#### Using Cloudflare Tunnel (Free, Static Domain)
+
+1. **Install cloudflared**:
+   ```bash
+   # macOS
+   brew install cloudflare/cloudflare/cloudflared
+   ```
+
+2. **Create tunnel**:
+   ```bash
+   cloudflared tunnel --url http://localhost:8000
+   ```
+
+3. **Copy the HTTPS URL** provided
+
+**Important Notes for Local Service:**
+- Keep your terminal/computer running with the tunnel active
+- The tunnel URL may change (except with paid ngrok or Cloudflare)
+- Update `TRADING_SERVICE_URL` in Vercel if the URL changes
+- For production, consider deploying the trading service (see Option B)
+
+### Option B: Deploy Trading Service (Recommended for Production)
+
+The Python trading service can be deployed separately. Options:
+
+#### Railway
 1. Go to [railway.app](https://railway.app)
 2. Create a new project
 3. Connect your GitHub repo
@@ -29,9 +112,10 @@ The Python trading service needs to be deployed separately. Options:
    - `AVANTIS_RPC_URL=https://mainnet.base.org`
    - `PRIVY_APP_ID=your-privy-app-id`
    - `PRIVY_APP_SECRET=your-privy-app-secret`
+   - `ALLOWED_ORIGINS=https://your-app.vercel.app`
 6. Deploy and note the service URL (e.g., `https://your-service.railway.app`)
 
-### Option B: Render
+#### Render
 1. Go to [render.com](https://render.com)
 2. Create a new Web Service
 3. Connect your GitHub repo
@@ -41,7 +125,7 @@ The Python trading service needs to be deployed separately. Options:
 7. Set environment variables (same as Railway)
 8. Deploy and note the service URL
 
-### Option C: Your Own Server
+#### Your Own Server
 - Deploy the Python service to any server with Python 3.9+
 - Ensure it's accessible via HTTPS
 - Note the public URL
@@ -71,11 +155,21 @@ The Python trading service needs to be deployed separately. Options:
    NEXT_PUBLIC_PRIVY_APP_ID=your-privy-app-id
    ```
 
+   **For Local Trading Service:**
+   ```
+   TRADING_SERVICE_URL=https://your-ngrok-url.ngrok.io
+   # Or your localtunnel/cloudflare tunnel URL
+   ```
+
+   **For Deployed Trading Service:**
+   ```
+   TRADING_SERVICE_URL=https://your-trading-service-url.com
+   ```
+
    **Optional (for full functionality):**
    ```
    NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
    NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your-supabase-key
-   TRADING_SERVICE_URL=https://your-trading-service-url.com
    NEXT_PUBLIC_NEWSAPI_KEY=your-newsapi-key (optional)
    NEXT_PUBLIC_ALPHAVANTAGE_KEY=your-alphavantage-key (optional)
    NEXT_PUBLIC_CRYPTOPANIC_KEY=your-cryptopanic-key (optional)
@@ -83,8 +177,11 @@ The Python trading service needs to be deployed separately. Options:
    ```
 
    **Important**: 
-   - `TRADING_SERVICE_URL` should be your deployed trading service URL (from Step 1)
+   - `TRADING_SERVICE_URL` should be:
+     - Your ngrok/localtunnel URL if using local service
+     - Your deployed service URL if using Option B
    - Make sure to set these for **Production**, **Preview**, and **Development** environments
+   - If using ngrok free tier, the URL changes on restart - update Vercel env vars when it changes
 
 4. **Deploy**:
    - Click "Deploy"
@@ -133,7 +230,25 @@ The trading service needs to allow requests from your Vercel domain.
 
 ### Update Trading Service CORS
 
-In `server/trading-service/main.py`, update the CORS middleware:
+**Option 1: Using Environment Variable (Recommended)**
+
+Set the `ALLOWED_ORIGINS` environment variable when running your local service:
+
+```bash
+export ALLOWED_ORIGINS="https://your-project.vercel.app,https://your-project-*.vercel.app,http://localhost:3000"
+cd server/trading-service
+source venv/bin/activate
+uvicorn main:app --reload --port 8000
+```
+
+Or create a `.env` file in `server/trading-service/`:
+```env
+ALLOWED_ORIGINS=https://your-project.vercel.app,https://your-project-*.vercel.app,http://localhost:3000
+```
+
+**Option 2: Update Code Directly**
+
+In `server/trading-service/main.py`, the CORS is already configured to read from `ALLOWED_ORIGINS` environment variable. If you want to hardcode it:
 
 ```python
 app.add_middleware(
@@ -149,7 +264,7 @@ app.add_middleware(
 )
 ```
 
-Or for development, you can keep `allow_origins=["*"]` but restrict it in production.
+**For Development**: You can temporarily use `allow_origins=["*"]` by setting `ALLOWED_ORIGINS=*` in your `.env` file, but restrict it for production.
 
 ## Step 4: Verify Deployment
 
