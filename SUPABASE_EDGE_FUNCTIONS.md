@@ -1,88 +1,48 @@
-# Supabase Edge Functions Configuration
+# Supabase Edge Functions - Deprecated
 
-## When Do You Need Edge Functions?
+## ⚠️ Edge Functions No Longer Required
 
-**For Vercel Deployment: NOT NECESSARY**
+**As of the latest update, Supabase Edge Functions are no longer used for trading operations.**
 
-When deploying to Vercel, the client uses **Next.js API routes** (not Supabase Edge Functions). The code is configured to prefer Next.js API routes:
+All trading operations (build-transaction, execute-trade, close-trade) are now handled directly by the Python FastAPI service. The client calls the Python service endpoints directly, eliminating the need for Edge Functions.
 
-```javascript
-const useNextApiRoute = true; // Always use Next.js API route for client-side deployment
+## Current Architecture
+
+```
+Client (Next.js)
+  ↓
+Python Trading Service (FastAPI)
+  ↓
+Avantis SDK
+  ↓
+On-chain (Base)
 ```
 
-So for Vercel deployment, you **don't need to configure Edge Functions** at all.
+## What Changed
 
-## When You DO Need Edge Functions
+- **Removed**: Supabase Edge Functions for trading operations
+- **Removed**: Trade storage in Supabase database (trades are fetched from Avantis SDK)
+- **Kept**: Direct Python service calls for all trading operations
+- **Kept**: Supabase database for user authentication and news caching (optional)
 
-You only need Edge Functions if:
-1. **Using Supabase Cloud** (not local Docker) and want to use Edge Functions instead of Next.js routes
-2. **Testing locally** with Supabase Docker and want to test the Edge Functions
-3. **Using Edge Functions in production** on Supabase cloud
+## Migration Notes
 
-## Configuration Options
+- Existing Edge Functions have been removed from the codebase
+- No Edge Function deployment is required
+- All trading operations go through the Python service
+- Trades are fetched on-demand from Avantis SDK via `getTrades()` endpoint
 
-### Option 1: Local Docker + Local Trading Service
+## Benefits
 
-If running Supabase locally with Docker and trading service on localhost:
+1. **Simplified architecture**: Fewer moving parts, easier to maintain
+2. **Reduced latency**: Direct calls to Python service, no Edge Function overhead
+3. **Cost savings**: No Edge Function invocations
+4. **Single source of truth**: Avantis SDK is the authoritative source for trades
+5. **Easier debugging**: Fewer layers to trace through
 
-**No changes needed** - The default `host.docker.internal:8000` works:
-```typescript
-const TRADING_SERVICE_URL = Deno.env.get('TRADING_SERVICE_URL') || 'http://host.docker.internal:8000';
-```
+## For Deployment
 
-### Option 2: Local Docker + ngrok Trading Service
-
-If running Supabase locally with Docker but trading service is exposed via ngrok:
-
-**Set environment variable** in Supabase:
-```bash
-# In supabase/.env or supabase/.env.local
-TRADING_SERVICE_URL=https://your-ngrok-url.ngrok.io
-```
-
-Or when starting Supabase:
-```bash
-TRADING_SERVICE_URL=https://your-ngrok-url.ngrok.io supabase start
-```
-
-### Option 3: Supabase Cloud + Local Trading Service (ngrok)
-
-If using Supabase cloud (not Docker) and trading service is local via ngrok:
-
-**Set secrets in Supabase Dashboard:**
-1. Go to your Supabase project
-2. Navigate to Edge Functions → Settings
-3. Add secret: `TRADING_SERVICE_URL` = `https://your-ngrok-url.ngrok.io`
-
-Or via CLI:
-```bash
-supabase secrets set TRADING_SERVICE_URL=https://your-ngrok-url.ngrok.io
-```
-
-## For Vercel Deployment: Recommendation
-
-**You don't need Edge Functions at all!**
-
-The Vercel deployment uses Next.js API routes which:
-- Run on Vercel (same origin as your client)
-- Call your trading service directly (via ngrok or deployed URL)
-- No CORS issues
-- Simpler architecture
-
-The Edge Functions are only used as a fallback if Next.js routes fail, which shouldn't happen on Vercel.
-
-## Summary
-
-| Scenario | Need Edge Functions? | TRADING_SERVICE_URL |
-|----------|---------------------|---------------------|
-| Vercel deployment | ❌ No | Set in Vercel env vars (for Next.js routes) |
-| Local Docker + local trading | ✅ Optional | `http://host.docker.internal:8000` (default) |
-| Local Docker + ngrok trading | ✅ Optional | `https://ngrok-url.ngrok.io` (set in .env) |
-| Supabase Cloud + ngrok trading | ✅ If using | Set as Supabase secret |
-
-## Quick Answer
-
-**For your Vercel deployment: You don't need to change anything in Supabase Edge Functions.**
-
-The Next.js API routes handle everything, and they get the `TRADING_SERVICE_URL` from Vercel environment variables, not from Supabase.
-
+When deploying to Vercel or any other platform:
+- **No Edge Functions needed**: Just deploy the Next.js client and Python service
+- **Set `TRADING_SERVICE_URL`**: Point to your deployed Python service
+- **Optional Supabase**: Only needed for user authentication and news caching

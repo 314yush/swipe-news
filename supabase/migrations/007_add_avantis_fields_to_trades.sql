@@ -19,3 +19,7 @@ CREATE INDEX IF NOT EXISTS idx_trades_pair_trade_index ON trades(pair_index, tra
 WHERE pair_index IS NOT NULL AND trade_index IS NOT NULL;
 
 
+
+
+
+

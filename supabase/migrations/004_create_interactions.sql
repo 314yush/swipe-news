@@ -59,3 +59,7 @@ CREATE POLICY "Users can update own interactions" ON user_news_interactions
   );
 
 
+
+
+
+

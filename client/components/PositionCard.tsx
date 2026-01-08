@@ -22,6 +22,7 @@ import {
   truncateText,
   formatMarket,
 } from "@/lib/utils/formatters";
+import { isMarketOpen } from "@/lib/utils/marketHours";
 
 /**
  * M3 PositionCard component
@@ -47,6 +48,7 @@ interface Trade {
   pnlPercent: number;
   openedAt: string;
   closedAt?: string;
+  marketIsOpen?: boolean;
 }
 
 interface PositionCardProps {
@@ -72,10 +74,16 @@ export default function PositionCard({
     pnl,
     pnlPercent,
     openedAt,
+    marketIsOpen,
   } = trade;
 
   const isLong = direction === "long";
   const isProfit = pnl >= 0;
+  
+  // Check if market is open (use provided value or check manually)
+  const marketOpenStatus = marketIsOpen !== undefined 
+    ? marketIsOpen 
+    : isMarketOpen(market).isOpen;
 
   return (
     <Card>
@@ -98,8 +106,11 @@ export default function PositionCard({
               color={isLong ? "success" : "error"}
               sx={{
                 fontWeight: 600,
+                bgcolor: isLong ? "success.main" : "error.main",
+                color: "white",
                 "& .MuiChip-icon": {
                   fontSize: 16,
+                  color: "white",
                 },
               }}
             />
@@ -108,6 +119,23 @@ export default function PositionCard({
             <Typography variant="body2" sx={{ fontWeight: 500 }}>
               {formatMarket(market)}
             </Typography>
+            
+            {/* Market Closed Chip */}
+            {!marketOpenStatus && (
+              <Chip
+                label="Closed"
+                size="small"
+                variant="outlined"
+                color="warning"
+                sx={{
+                  fontSize: "0.7rem",
+                  height: 20,
+                  "& .MuiChip-label": {
+                    px: 0.75,
+                  },
+                }}
+              />
+            )}
           </Box>
 
           {/* Time */}

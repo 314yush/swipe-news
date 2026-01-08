@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { usePrivy } from "@privy-io/react-auth";
+import { usePrivy, useWallets } from "@privy-io/react-auth";
 import {
   Box,
   Typography,
@@ -22,7 +22,7 @@ import TradeHistory from "@/components/TradeHistory";
 import { ToastProvider, useToast } from "@/components/Toast";
 import { PositionCardSkeleton, StatsCardSkeleton } from "@/components/Skeleton";
 import useTradeStore from "@/lib/store/tradeStore";
-import { closeTrade as closeTradeApi } from "@/lib/services/api";
+import { closeTrade as closeTradeApi, getTrades, getPrices } from "@/lib/services/api";
 import type { Trade } from "@/lib/types";
 import { Grid } from "@mui/material";
 
@@ -41,6 +41,7 @@ type TabType = "active" | "history";
 
 function PortfolioPage() {
   const { authenticated, login, user } = usePrivy();
+  const { wallets } = useWallets();
   const toast = useToast();
   const {
     activeTrades,
@@ -50,21 +51,145 @@ function PortfolioPage() {
     setExecuting,
     isExecuting,
     calculateStats,
+    updateAllPrices,
+    syncTradesFromAvantis,
   } = useTradeStore();
 
   const [activeTab, setActiveTab] = useState<TabType>("active");
   const [closingTradeId, setClosingTradeId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Initialize with mock data if empty
+  // Fetch trades from Python service on mount and periodically
   useEffect(() => {
-    // Simulate loading
-    const timer = setTimeout(() => {
+    if (!authenticated || !user) {
       setIsLoading(false);
-    }, 500);
+      return;
+    }
 
-    return () => clearTimeout(timer);
-  }, []);
+    let isMounted = true;
+
+    const fetchTrades = async () => {
+      if (!isMounted) return;
+
+      try {
+        // Get wallet address (can be embedded or external wallet)
+        const embeddedWallet = wallets.find((w) => w.walletClientType === 'privy');
+        const externalWallet = wallets.find((w) => w.walletClientType !== 'privy');
+        const walletAddress = embeddedWallet?.address || externalWallet?.address || user?.wallet?.address;
+        const privyUserId = user?.id;
+
+        if (!walletAddress || !privyUserId) {
+          console.warn('Portfolio: Wallet address or Privy user ID not available');
+          if (isMounted) setIsLoading(false);
+          return;
+        }
+
+        console.log('🔄 [Portfolio] Fetching trades from Python service...');
+        const result = await getTrades({
+          privy_user_id: privyUserId,
+          wallet_address: walletAddress,
+        }) as { 
+          success: boolean; 
+          trades?: any[]; 
+          activeTrades?: any[];
+          closedTrades?: any[];
+          pending_orders?: number;
+        };
+
+        if (result.success && isMounted) {
+          // Sync trades from Avantis SDK with the store
+          syncTradesFromAvantis(result.activeTrades || [], result.closedTrades || []);
+          
+          console.log(`📥 [Portfolio] Synced trades from Avantis SDK:`, {
+            total: result.trades?.length || 0,
+            active: result.activeTrades?.length || 0,
+            closed: result.closedTrades?.length || 0,
+            pending_orders: result.pending_orders || 0,
+          });
+        }
+      } catch (error) {
+        console.error('❌ [Portfolio] Failed to fetch trades:', error);
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
+    };
+
+    // Fetch immediately
+    fetchTrades();
+
+    // Refresh trades every 30 seconds to catch any changes
+    const interval = setInterval(fetchTrades, 30000);
+
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, [authenticated, user, wallets, syncTradesFromAvantis]);
+
+  // Poll prices for active trades with adaptive interval
+  useEffect(() => {
+    if (!authenticated || !user || activeTrades.length === 0) {
+      return;
+    }
+
+    let isMounted = true;
+    let retryCount = 0;
+    const MAX_RETRIES = 3;
+
+    const updatePrices = async () => {
+      if (!isMounted) return;
+
+      try {
+        // Get unique markets from active trades, filter out:
+        // - "Pair-X" placeholders
+        // - Closed markets (marketIsOpen === false)
+        const markets = [...new Set(
+          activeTrades
+            .filter((trade: Trade) => {
+              // Only include trades where market is open
+              return trade.marketIsOpen !== false;
+            })
+            .map((trade: Trade) => trade.market)
+            .filter((market: string) => market && !market.startsWith('Pair-') && market !== 'Unknown')
+        )];
+        
+        if (markets.length === 0) {
+          // No open markets to update - this is fine, just skip
+          return;
+        }
+
+        // Fetch current prices (with caching built-in)
+        const prices = await getPrices(markets);
+        
+        // Update P&L for all active trades (only for open markets)
+        if (Object.keys(prices).length > 0 && isMounted) {
+          updateAllPrices(prices);
+          retryCount = 0; // Reset retry count on success
+        } else {
+          console.warn('⚠️ [Portfolio] No prices received for markets:', markets);
+        }
+      } catch (error) {
+        console.error('❌ [Portfolio] Failed to update prices:', error);
+        retryCount++;
+        
+        // If too many failures, increase interval
+        if (retryCount >= MAX_RETRIES) {
+          console.warn('⚠️ [Portfolio] Too many price update failures, slowing down polling');
+        }
+      }
+    };
+
+    // Update immediately
+    updatePrices();
+
+    // Adaptive polling: 5 seconds normally, 15 seconds if many failures
+    const interval = setInterval(updatePrices, retryCount >= MAX_RETRIES ? 15000 : 5000);
+
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, [authenticated, user, activeTrades, updateAllPrices]);
 
   // Use store trades only (no mock fallback)
   const displayActiveTrades = activeTrades;
@@ -79,18 +204,114 @@ function PortfolioPage() {
     setClosingTradeId(tradeId);
 
     try {
-      // Get user ID from Supabase if available
-      let userId = null;
-      if (user?.id) {
-        try {
-          const { getUserIdByPrivyId } = await import('@/lib/services/supabase');
-          userId = await getUserIdByPrivyId(user.id);
-        } catch (error) {
-          console.warn('Failed to get user ID from Supabase:', error);
-        }
+      // Get wallet address and Privy user ID
+      const embeddedWallet = wallets.find((w) => w.walletClientType === 'privy');
+      const externalWallet = wallets.find((w) => w.walletClientType !== 'privy');
+      const walletAddress = embeddedWallet?.address || externalWallet?.address || user?.wallet?.address;
+      const privyUserId = user?.id;
+
+      if (!walletAddress || !privyUserId) {
+        throw new Error('Wallet address or Privy user ID not available');
       }
 
-      const result = (await closeTradeApi(tradeId, { ...trade, userId })) as {
+      // Debug: Log the trade object to see what we have
+      console.log('🔍 [Portfolio] Trade object before close attempt:', {
+        id: trade.id,
+        pairIndex: trade.pairIndex,
+        tradeIndex: trade.tradeIndex,
+        pairIndex_type: typeof trade.pairIndex,
+        tradeIndex_type: typeof trade.tradeIndex,
+        pairIndex_undefined: trade.pairIndex === undefined,
+        pairIndex_null: trade.pairIndex === null,
+        tradeIndex_undefined: trade.tradeIndex === undefined,
+        tradeIndex_null: trade.tradeIndex === null,
+        market: trade.market,
+        full_trade: trade,
+      });
+      
+      // Ensure trade has required Avantis parameters
+      // If missing, try to refresh from Avantis first
+      // IMPORTANT: 0 is a valid index! Check for undefined/null, not falsy
+      if (trade.pairIndex === undefined || trade.tradeIndex === undefined || trade.pairIndex === null || trade.tradeIndex === null) {
+        console.warn('⚠️ [Portfolio] Trade missing pairIndex/tradeIndex, attempting to refresh from Avantis...', {
+          pairIndex: trade.pairIndex,
+          tradeIndex: trade.tradeIndex,
+        });
+        
+        // Try to refresh trades from Avantis to get the missing data
+        try {
+          if (walletAddress && privyUserId) {
+            const refreshResult = await getTrades({
+              privy_user_id: privyUserId,
+              wallet_address: walletAddress,
+            }) as { 
+              success: boolean; 
+              activeTrades?: any[];
+            };
+            
+            if (refreshResult.success && refreshResult.activeTrades) {
+              // Sync to update the trade with missing fields
+              syncTradesFromAvantis(refreshResult.activeTrades || [], []);
+              
+              // Get updated trade from store after sync
+              const { activeTrades: updatedActiveTrades } = useTradeStore.getState();
+              const updatedTrade = updatedActiveTrades.find((t: Trade) => t.id === tradeId);
+              
+              if (updatedTrade && updatedTrade.pairIndex !== undefined && updatedTrade.tradeIndex !== undefined) {
+                // Use the updated trade with proper indices - retry the close
+                console.log('✅ [Portfolio] Trade updated with pairIndex/tradeIndex, retrying close...');
+                // Recursively call handleCloseTrade with the updated trade
+                // But we'll just proceed with the updated trade directly
+                const result = (await closeTradeApi(tradeId, {
+                  ...updatedTrade,
+                  privy_user_id: privyUserId,
+                  wallet_address: walletAddress,
+                })) as {
+                  success: boolean;
+                  trade: { exitPrice: number; pnl: number; pnlPercent: number; txHash?: string };
+                };
+                
+                if (result.success) {
+                  const tradeData = result.trade;
+                  closeTrade(tradeId, tradeData.exitPrice);
+                  
+                  const txHash = tradeData.txHash;
+                  const pnl = tradeData.pnl;
+                  const pnlPercent = tradeData.pnlPercent || 0;
+                  
+                  toast.success(
+                    `Position closed! P&L: ${pnl >= 0 ? "+" : ""}$${pnl.toFixed(2)} (${pnlPercent >= 0 ? "+" : ""}${pnlPercent.toFixed(2)}%)`,
+                    { 
+                      duration: 5000,
+                      description: txHash ? `TX: ${txHash.slice(0, 10)}...${txHash.slice(-8)}` : undefined
+                    }
+                  );
+                  setClosingTradeId(null);
+                  return;
+                }
+              } else {
+                console.warn('⚠️ [Portfolio] Trade still missing pairIndex/tradeIndex after refresh');
+              }
+            }
+          }
+        } catch (refreshError) {
+          console.error('❌ [Portfolio] Failed to refresh trade from Avantis:', refreshError);
+        }
+        
+        // If refresh didn't work, show helpful error
+        toast.error(
+          'Unable to close trade: Missing position data. The trade may not exist on-chain. Please refresh the page.',
+          { duration: 5000 }
+        );
+        setClosingTradeId(null);
+        throw new Error('Trade missing pairIndex or tradeIndex. Please refresh the page to sync trades from Avantis.');
+      }
+
+      const result = (await closeTradeApi(tradeId, {
+        ...trade,
+        privy_user_id: privyUserId,
+        wallet_address: walletAddress,
+      })) as {
         success: boolean;
         trade: { exitPrice: number; pnl: number; pnlPercent: number; txHash?: string };
       };

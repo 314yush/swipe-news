@@ -6,20 +6,20 @@ import RefreshIcon from "@mui/icons-material/Refresh";
 
 /**
  * RefreshTimer - Shows countdown until next global feed refresh
- * For swipe feed: refreshes every 15 minutes globally (all users see same news)
+ * For swipe feed: refreshes every 5 minutes globally (all users see same news)
  * 
  * Note: News is cached globally on the server, so all users see the same
- * news and it refreshes at the same time every 15 minutes.
+ * news and it refreshes at the same time every 5 minutes for real-time updates.
  */
 
 interface RefreshTimerProps {
-  refreshIntervalMinutes?: number; // Default 15 minutes for swipe feed
+  refreshIntervalMinutes?: number; // Default 5 minutes for real-time swipe feed
   onRefresh?: () => void;
   cacheExpiresAt?: string; // ISO timestamp when cache expires (from API)
 }
 
 export default function RefreshTimer({
-  refreshIntervalMinutes = 15,
+  refreshIntervalMinutes = 30,
   onRefresh,
   cacheExpiresAt,
 }: RefreshTimerProps) {

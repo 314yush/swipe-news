@@ -7,7 +7,7 @@ This guide explains how to deploy the client/UI to Vercel while keeping the trad
 When deployed to Vercel:
 - **Client/UI**: Deployed on Vercel (Next.js)
 - **Trading Service**: Runs separately (Python FastAPI) - can be on Railway, Render, or your own server
-- **Supabase**: Cloud-hosted database and Edge Functions
+- **Supabase**: Cloud-hosted database (optional, for user authentication and news caching)
 
 ## Prerequisites
 

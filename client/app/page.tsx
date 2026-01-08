@@ -76,7 +76,7 @@ function SwipePage() {
         try {
           // Fetch both sets of news in parallel for better performance
           const [swipeResult, feedResult] = await Promise.all([
-            // Swipe page: only show news from last 15 minutes for fresh, actionable content
+            // Swipe page: show real-time news from last 15 minutes
             fetchAndUpdateNews(undefined, 15),
             // Feed page: show news from last 24 hours for browsing
             fetchAndUpdateNews(undefined, 24 * 60),
@@ -85,6 +85,12 @@ function SwipePage() {
           if (swipeResult.items.length > 0) {
             setNews(swipeResult.items);
             setCacheExpiresAt(swipeResult.cacheExpiresAt); // Set cache expiration for timer
+            
+            // Show warning if showing older news
+            if (swipeResult.nowShowingOlderNews) {
+              console.warn('[Swipe Page] ⚠️ Showing older news - hot/recent buckets exhausted');
+            }
+            
             console.log(`[Swipe Page] Loaded ${swipeResult.items.length} news items (15min window)`);
           } else {
             console.warn('[Swipe Page] No news found in 15-minute window. Try refreshing or check if feeds are updating.');
@@ -155,10 +161,16 @@ function SwipePage() {
   // Handle feed refresh
   const handleRefresh = async () => {
     try {
-      const result = await fetchAndUpdateNews(undefined, 15);
+      const result = await fetchAndUpdateNews(undefined, 15); // Real-time 15-minute window
       if (result.items.length > 0) {
         setNews(result.items);
         setCacheExpiresAt(result.cacheExpiresAt); // Update cache expiration for timer
+        
+        // Show warning if showing older news
+        if (result.nowShowingOlderNews) {
+          console.warn('[Swipe Page] ⚠️ Showing older news - hot/recent buckets exhausted');
+        }
+        
         console.log(`[Swipe Page] Refreshed ${result.items.length} news items (15min window)`);
       }
     } catch (error) {
@@ -182,28 +194,6 @@ function SwipePage() {
     // Keep modal open to show signing state
 
     try {
-      // Ensure user is saved to Supabase first
-      if (user && authenticated) {
-        try {
-          await setUser(user);
-        } catch (error) {
-          console.warn('Failed to save user to Supabase:', error);
-        }
-      }
-
-      // Get user ID from Supabase if available (optimized - single attempt with short delay)
-      let userId = null;
-      if (user?.id) {
-        try {
-          const { getUserIdByPrivyId } = await import('@/lib/services/supabase');
-          // Single attempt with short delay to allow user save to complete
-          await new Promise(resolve => setTimeout(resolve, 200));
-          userId = await getUserIdByPrivyId(user.id);
-        } catch (error) {
-          console.warn('Failed to get user ID from Supabase:', error);
-        }
-      }
-
       // Get wallet address (can be embedded or external wallet)
       const embeddedWallet = wallets.find((w) => w.walletClientType === 'privy');
       const externalWallet = wallets.find((w) => w.walletClientType !== 'privy');
@@ -211,6 +201,12 @@ function SwipePage() {
       
       if (!walletAddress) {
         throw new Error("Wallet address not found. Please connect a wallet.");
+      }
+
+      // Get Privy user ID
+      const privyUserId = user?.id;
+      if (!privyUserId) {
+        throw new Error("Privy user ID not found. Please ensure you are logged in.");
       }
 
       // Check if pair is available
@@ -243,7 +239,8 @@ function SwipePage() {
         direction: trade.direction,
         collateral: optimalParams.collateral, // Always minimum
         leverage: optimalParams.leverage, // Always maximum
-        userId,
+        privy_user_id: privyUserId,
+        wallet_address: walletAddress,
       }) as any;
 
       // Convert transaction to Privy format (EIP-1559 with hex strings)
@@ -296,28 +293,38 @@ function SwipePage() {
       if (isEmbeddedWallet) {
         // Use Privy's signTransaction for embedded wallets
         console.log('🔄 [UI] Signing transaction with Privy embedded wallet (popup will appear)...', formattedTx);
-        const signedTx = await signTransaction(formattedTx, {
+        const signedTxResult = await signTransaction(formattedTx, {
           address: walletAddress as `0x${string}`,
         });
         console.log('✅ [UI] Transaction signed');
+
+        // Privy's signTransaction returns an object with signature property
+        // We need to merge the signature into the transaction object
+        // The Python service accepts Optional[Any], so we can pass the full object
+        const signedTx = {
+          ...formattedTx,
+          ...(typeof signedTxResult === 'object' && signedTxResult !== null ? signedTxResult : {}),
+        } as any;
 
         // Use optimal params from pendingTrade (already calculated in handleTrade)
         const finalCollateral = trade.collateral || optimalParams.collateral;
         const finalLeverage = trade.leverage || optimalParams.leverage;
 
         // Execute trade with signed transaction
+        // Note: txHash is not required when signedTransaction is provided (it will be returned after execution)
         const result = await executeTrade({
           ...trade,
           collateral: finalCollateral, // Minimum collateral
           leverage: finalLeverage, // Maximum leverage
           takeProfit: 100,
           stopLoss: null,
-          userId,
+          privy_user_id: privyUserId,
+          wallet_address: walletAddress,
           signedTransaction: signedTx,
           pairIndex: txData.pair_index,
           tradeIndex: txData.trade_index,
           entryPrice: txData.entry_price,
-        }) as { success: boolean; trade: Record<string, unknown> };
+        } as any) as { success: boolean; trade: Record<string, unknown> };
         
         if (result.success) {
           const tradeData = result.trade;
@@ -487,18 +494,21 @@ function SwipePage() {
           const finalCollateral = trade.collateral || optimalParams.collateral;
           const finalLeverage = trade.leverage || optimalParams.leverage;
 
+          // Note: txHash is provided for external wallet (transaction already sent)
+          // signedTransaction is not required in this case
           const result = await executeTrade({
             ...trade,
             collateral: finalCollateral, // Minimum collateral
             leverage: finalLeverage, // Maximum leverage
-            takeProfit: 100,
+            takeProfit: 200,
             stopLoss: null,
-            userId,
+            privy_user_id: privyUserId,
+            wallet_address: walletAddress,
             txHash: txHash,
             pairIndex: txData.pair_index,
             tradeIndex: txData.trade_index,
             entryPrice: txData.entry_price,
-          }) as { success: boolean; trade: Record<string, unknown> };
+          } as any) as { success: boolean; trade: Record<string, unknown> };
             
             if (result.success) {
               const tradeData = result.trade;
@@ -649,7 +659,7 @@ function SwipePage() {
       {/* Refresh timer */}
       <RefreshTimer
         cacheExpiresAt={cacheExpiresAt}
-        refreshIntervalMinutes={15}
+        refreshIntervalMinutes={5}
         onRefresh={handleRefresh}
       />
 

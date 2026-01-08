@@ -420,3 +420,7 @@ function TradeParametersCard({ details }: TradeParametersCardProps) {
 
 
 
+
+
+
+

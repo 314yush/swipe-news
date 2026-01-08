@@ -47,3 +47,7 @@ CREATE TRIGGER update_news_cache_updated_at
   EXECUTE FUNCTION update_updated_at_column();
 
 
+
+
+
+

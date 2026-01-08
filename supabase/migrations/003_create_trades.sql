@@ -77,3 +77,7 @@ CREATE TRIGGER update_trades_updated_at
   EXECUTE FUNCTION update_updated_at_column();
 
 
+
+
+
+

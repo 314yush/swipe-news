@@ -5,7 +5,7 @@ import { create } from 'zustand';
  */
 const useNewsStore = create((set, get) => ({
   // News state
-  news: [], // 15-minute news for swipe feed
+  news: [], // 15-minute real-time news for swipe feed
   feedNews: [], // 24-hour news for feed page
   currentCategory: 'Trending',
   interactedNews: {}, // { newsId: 'dismissed' | 'longed' | 'shorted' }

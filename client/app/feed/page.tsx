@@ -68,32 +68,59 @@ function FeedPage() {
   // Note: News is pre-fetched when user logs in, but we refresh if empty
   useEffect(() => {
     const loadNews = async () => {
+      console.log(`[Feed Page] useEffect triggered, feedNews.length: ${feedNews.length}`);
+      
       if (feedNews.length === 0) {
         setLoading(true);
         try {
+          console.log('[Feed Page] 🔄 Loading news from RSS API (feedNews is empty)...');
           // Feed page: show news from last 24 hours for browsing
           const rssNews = await fetchAndUpdateNews(undefined, 24 * 60);
+          console.log('[Feed Page] RSS API response:', {
+            itemsCount: rssNews.items.length,
+            hasCacheExpiresAt: !!rssNews.cacheExpiresAt,
+          });
+          
           if (rssNews.items.length > 0) {
             setFeedNews(rssNews.items);
-            console.log(`[Feed Page] Loaded ${rssNews.items.length} news items (24hr window)`);
+            console.log(`[Feed Page] ✅ Loaded ${rssNews.items.length} news items (24hr window)`);
+          } else {
+            console.warn('[Feed Page] ⚠️ No news items returned from API. This could mean:');
+            console.warn('  - RSS feeds are slow to respond');
+            console.warn('  - No news in the last 24 hours');
+            console.warn('  - API endpoint is not working');
+            console.warn('  - Try clicking the refresh button');
           }
         } catch (error) {
-          console.error('Error loading RSS news:', error);
+          console.error('[Feed Page] ❌ Error loading RSS news:', error);
+          console.error('Error details:', {
+            message: error instanceof Error ? error.message : String(error),
+            stack: error instanceof Error ? error.stack : undefined,
+          });
           // News will remain empty if fetch fails - user can retry with refresh
         } finally {
           setLoading(false);
         }
+      } else {
+        console.log(`[Feed Page] Using cached news (${feedNews.length} items) - skipping API call`);
+        console.log('[Feed Page] 💡 To see RSS API calls, clear feedNews or click refresh button');
       }
     };
     
     loadNews();
   }, [feedNews.length, setFeedNews, setLoading]);
 
-  // Filter news by category
-  const filteredNews: NewsItem[] =
+  // Filter news by category and sort chronologically (newest first)
+  const filteredNews: NewsItem[] = (
     currentCategory === "Trending"
       ? feedNews
-      : feedNews.filter((n: NewsItem) => n.category === currentCategory);
+      : feedNews.filter((n: NewsItem) => n.category === currentCategory)
+  ).sort((a: NewsItem, b: NewsItem) => {
+    // Sort chronologically by firstSeenAt (newest first) or fallback to publishedAt
+    const aTime = a.firstSeenAt ? new Date(a.firstSeenAt).getTime() : new Date(a.publishedAt).getTime();
+    const bTime = b.firstSeenAt ? new Date(b.firstSeenAt).getTime() : new Date(b.publishedAt).getTime();
+    return bTime - aTime; // Descending (newest first)
+  });
 
   // Handle pull-to-refresh
   const handleRefresh = async () => {

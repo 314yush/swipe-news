@@ -1,6 +1,12 @@
 /**
  * Avantis Trading Pairs Configuration
  * Maps trading pairs to keywords for news matching
+ * 
+ * Includes proxy assets for capturing general market news:
+ * - BTC/USD: General crypto market news
+ * - SPY/USD: General stock market news
+ * - XAU/USD: Safe-haven / macro news
+ * - USOILSPOT/USD: Energy sector news
  */
 
 export interface TradingPair {
@@ -8,18 +14,96 @@ export interface TradingPair {
   pair: string;
   base: string; // e.g., BTC from BTC/USD
   keywords: string[]; // Keywords to match in news
+  isProxy?: boolean; // True if this is a proxy asset for general market news
+}
+
+export interface AssetMatch {
+  pair: string;
+  confidence: number; // 0-100
+  matchedKeywords: string[];
+  isProxy: boolean;
+  category: TradingPair['category'];
 }
 
 // Extract base symbols and create keyword mappings
+// Note: Proxy assets are listed first with isProxy: true for general market news
 export const TRADING_PAIRS: TradingPair[] = [
+  // ===========================================
+  // PROXY ASSETS - Capture general market news
+  // ===========================================
+  
+  // BTC as proxy for general crypto market news
+  { 
+    category: 'CRYPTO', 
+    pair: 'BTC/USD', 
+    base: 'BTC', 
+    keywords: [
+      'bitcoin', 'btc', 
+      // General crypto market keywords
+      'crypto market', 'cryptocurrency market', 'digital assets', 'crypto rally', 
+      'crypto crash', 'crypto regulation', 'sec crypto', 'crypto etf', 'crypto prices',
+      'cryptocurrency prices', 'crypto trading', 'crypto investors', 'crypto selloff',
+      'crypto surge', 'crypto plunge', 'cryptocurrency rally', 'cryptocurrency crash'
+    ],
+    isProxy: true 
+  },
+  
+  // SPY as proxy for general stock market news
+  { 
+    category: 'OTHER', 
+    pair: 'SPY/USD', 
+    base: 'SPY', 
+    keywords: [
+      'spy', 's&p 500', 'sp500', 's&p500',
+      // General stock market keywords
+      'stock market', 'stocks rally', 'stocks fall', 'wall street', 'equities',
+      'dow jones', 'nasdaq', 'market rally', 'market crash', 'fed rate', 'fomc',
+      'interest rate', 'rate hike', 'rate cut', 'federal reserve', 'powell',
+      'stock prices', 'equity markets', 'market selloff', 'market surge',
+      'stocks surge', 'stocks plunge', 'market correction', 'bull market', 'bear market'
+    ],
+    isProxy: true 
+  },
+  
+  // XAU as proxy for safe-haven / macro news
+  { 
+    category: 'COMMODITIES', 
+    pair: 'XAU/USD', 
+    base: 'GOLD', 
+    keywords: [
+      'gold', 'xau', 'precious metals',
+      // Safe-haven and macro keywords
+      'safe haven', 'gold price', 'bullion', 'gold rally', 'gold surge',
+      'inflation hedge', 'gold reserves', 'central bank gold'
+    ],
+    isProxy: true 
+  },
+  
+  // OIL as proxy for energy sector news
+  { 
+    category: 'COMMODITIES', 
+    pair: 'USOILSPOT/USD', 
+    base: 'OIL', 
+    keywords: [
+      'oil', 'crude', 'wti', 'brent', 'petroleum', 'energy prices',
+      // Energy sector keywords
+      'opec', 'oil price', 'crude oil', 'oil rally', 'oil surge', 'oil crash',
+      'gasoline', 'fuel prices', 'energy crisis', 'oil production', 'oil supply'
+    ],
+    isProxy: true 
+  },
+  
+  // ===========================================
+  // SPECIFIC ASSETS - Direct ticker matches
+  // ===========================================
+  
   // CRYPTO
   { category: 'CRYPTO', pair: 'APT/USD', base: 'APT', keywords: ['aptos', 'apt'] },
   { category: 'CRYPTO', pair: 'ARB/USD', base: 'ARB', keywords: ['arbitrum', 'arb'] },
   { category: 'CRYPTO', pair: 'AVAX/USD', base: 'AVAX', keywords: ['avalanche', 'avax'] },
   { category: 'CRYPTO', pair: 'BNB/USD', base: 'BNB', keywords: ['binance', 'bnb', 'binance coin'] },
-  { category: 'CRYPTO', pair: 'BTC/USD', base: 'BTC', keywords: ['bitcoin', 'btc'] },
   { category: 'CRYPTO', pair: 'DOGE/USD', base: 'DOGE', keywords: ['dogecoin', 'doge'] },
-  { category: 'CRYPTO', pair: 'ETH/USD', base: 'ETH', keywords: ['ethereum', 'eth', 'ether'] },
+  { category: 'CRYPTO', pair: 'ETH/USD', base: 'ETH', keywords: ['ethereum', 'eth', 'ether', 'vitalik'] },
   { category: 'CRYPTO', pair: 'ETHFI/USD', base: 'ETHFI', keywords: ['ethfi', 'ethereum fi'] },
   { category: 'CRYPTO', pair: 'FARTCOIN/USD', base: 'FARTCOIN', keywords: ['fartcoin'] },
   { category: 'CRYPTO', pair: 'HYPE/USD', base: 'HYPE', keywords: ['hype'] },
@@ -36,8 +120,8 @@ export const TRADING_PAIRS: TradingPair[] = [
   
   // FOREX
   { category: 'FOREX', pair: 'AUD/USD', base: 'AUD', keywords: ['australian dollar', 'aud', 'australia'] },
-  { category: 'FOREX', pair: 'EUR/USD', base: 'EUR', keywords: ['euro', 'eur', 'european union', 'ecb'] },
-  { category: 'FOREX', pair: 'GBP/USD', base: 'GBP', keywords: ['british pound', 'gbp', 'sterling', 'uk', 'britain'] },
+  { category: 'FOREX', pair: 'EUR/USD', base: 'EUR', keywords: ['euro', 'eur', 'european union', 'ecb', 'eurozone'] },
+  { category: 'FOREX', pair: 'GBP/USD', base: 'GBP', keywords: ['british pound', 'gbp', 'sterling', 'uk', 'britain', 'bank of england'] },
   { category: 'FOREX', pair: 'NZD/USD', base: 'NZD', keywords: ['new zealand dollar', 'nzd'] },
   { category: 'FOREX', pair: 'USD/CAD', base: 'CAD', keywords: ['canadian dollar', 'cad', 'canada'] },
   { category: 'FOREX', pair: 'USD/CHF', base: 'CHF', keywords: ['swiss franc', 'chf', 'switzerland'] },
@@ -47,16 +131,14 @@ export const TRADING_PAIRS: TradingPair[] = [
   { category: 'FOREX', pair: 'USD/SGD', base: 'SGD', keywords: ['singapore dollar', 'sgd', 'singapore'] },
   { category: 'FOREX', pair: 'USD/ZAR', base: 'ZAR', keywords: ['south african rand', 'zar', 'south africa'] },
   
-  // COMMODITIES
-  { category: 'COMMODITIES', pair: 'USOILSPOT/USD', base: 'OIL', keywords: ['oil', 'crude', 'wti', 'brent', 'petroleum', 'energy prices'] },
+  // COMMODITIES (non-proxy)
   { category: 'COMMODITIES', pair: 'XAG/USD', base: 'SILVER', keywords: ['silver', 'xag'] },
-  { category: 'COMMODITIES', pair: 'XAU/USD', base: 'GOLD', keywords: ['gold', 'xau', 'precious metals'] },
   
   // OTHER - Stocks & Tokens
-  { category: 'OTHER', pair: 'AAPL/USD', base: 'AAPL', keywords: ['apple', 'aapl'] },
+  { category: 'OTHER', pair: 'AAPL/USD', base: 'AAPL', keywords: ['apple', 'aapl', 'iphone', 'tim cook'] },
   { category: 'OTHER', pair: 'AAVE/USD', base: 'AAVE', keywords: ['aave'] },
   { category: 'OTHER', pair: 'AERO/USD', base: 'AERO', keywords: ['aero'] },
-  { category: 'OTHER', pair: 'AMZN/USD', base: 'AMZN', keywords: ['amazon', 'amzn'] },
+  { category: 'OTHER', pair: 'AMZN/USD', base: 'AMZN', keywords: ['amazon', 'amzn', 'aws', 'bezos'] },
   { category: 'OTHER', pair: 'APE/USD', base: 'APE', keywords: ['ape', 'apecoin'] },
   { category: 'OTHER', pair: 'ARKM/USD', base: 'ARKM', keywords: ['arkm'] },
   { category: 'OTHER', pair: 'ASTER/USD', base: 'ASTER', keywords: ['aster'] },
@@ -71,15 +153,15 @@ export const TRADING_PAIRS: TradingPair[] = [
   { category: 'OTHER', pair: 'ENA/USD', base: 'ENA', keywords: ['ena'] },
   { category: 'OTHER', pair: 'FET/USD', base: 'FET', keywords: ['fetch', 'fet'] },
   { category: 'OTHER', pair: 'GOAT/USD', base: 'GOAT', keywords: ['goat'] },
-  { category: 'OTHER', pair: 'GOOG/USD', base: 'GOOG', keywords: ['google', 'alphabet', 'goog'] },
+  { category: 'OTHER', pair: 'GOOG/USD', base: 'GOOG', keywords: ['google', 'alphabet', 'goog', 'youtube'] },
   { category: 'OTHER', pair: 'HOOD/USD', base: 'HOOD', keywords: ['robinhood', 'hood'] },
   { category: 'OTHER', pair: 'JUP/USD', base: 'JUP', keywords: ['jupiter', 'jup'] },
   { category: 'OTHER', pair: 'KAITO/USD', base: 'KAITO', keywords: ['kaito'] },
   { category: 'OTHER', pair: 'LDO/USD', base: 'LDO', keywords: ['lido', 'ldo'] },
-  { category: 'OTHER', pair: 'META/USD', base: 'META', keywords: ['meta', 'facebook'] },
+  { category: 'OTHER', pair: 'META/USD', base: 'META', keywords: ['meta', 'facebook', 'instagram', 'zuckerberg'] },
   { category: 'OTHER', pair: 'MON/USD', base: 'MON', keywords: ['mon'] },
-  { category: 'OTHER', pair: 'MSFT/USD', base: 'MSFT', keywords: ['microsoft', 'msft'] },
-  { category: 'OTHER', pair: 'NVDA/USD', base: 'NVDA', keywords: ['nvidia', 'nvda'] },
+  { category: 'OTHER', pair: 'MSFT/USD', base: 'MSFT', keywords: ['microsoft', 'msft', 'azure', 'satya nadella'] },
+  { category: 'OTHER', pair: 'NVDA/USD', base: 'NVDA', keywords: ['nvidia', 'nvda', 'jensen huang', 'gpu'] },
   { category: 'OTHER', pair: 'ONDO/USD', base: 'ONDO', keywords: ['ondo'] },
   { category: 'OTHER', pair: 'ORDI/USD', base: 'ORDI', keywords: ['ordi'] },
   { category: 'OTHER', pair: 'PENDLE/USD', base: 'PENDLE', keywords: ['pendle'] },
@@ -91,11 +173,10 @@ export const TRADING_PAIRS: TradingPair[] = [
   { category: 'OTHER', pair: 'RENDER/USD', base: 'RENDER', keywords: ['render', 'rndr'] },
   { category: 'OTHER', pair: 'REZ/USD', base: 'REZ', keywords: ['rez'] },
   { category: 'OTHER', pair: 'SHIB/USD', base: 'SHIB', keywords: ['shiba', 'shib', 'shiba inu'] },
-  { category: 'OTHER', pair: 'SPY/USD', base: 'SPY', keywords: ['spy', 's&p 500', 'sp500'] },
   { category: 'OTHER', pair: 'STX/USD', base: 'STX', keywords: ['stacks', 'stx'] },
   { category: 'OTHER', pair: 'TAO/USD', base: 'TAO', keywords: ['tao', 'bittensor'] },
   { category: 'OTHER', pair: 'TRUMP/USD', base: 'TRUMP', keywords: ['trump'] },
-  { category: 'OTHER', pair: 'TSLA/USD', base: 'TSLA', keywords: ['tesla', 'tsla'] },
+  { category: 'OTHER', pair: 'TSLA/USD', base: 'TSLA', keywords: ['tesla', 'tsla', 'elon musk'] },
   { category: 'OTHER', pair: 'USD/BRL', base: 'BRL', keywords: ['brazilian real', 'brl', 'brazil'] },
   { category: 'OTHER', pair: 'USD/CNH', base: 'CNH', keywords: ['chinese yuan', 'cnh', 'yuan', 'china'] },
   { category: 'OTHER', pair: 'USD/IDR', base: 'IDR', keywords: ['indonesian rupiah', 'idr', 'indonesia'] },
@@ -115,7 +196,131 @@ export const TRADING_PAIRS: TradingPair[] = [
 ];
 
 /**
- * Find relevant trading pairs for a news article
+ * Match a keyword against text with proper boundary handling
+ * Short keywords (2-3 chars) use word boundaries to avoid false positives
+ * Longer keywords use substring matching
+ */
+function matchKeyword(text: string, keyword: string): boolean {
+  const keywordLower = keyword.toLowerCase();
+  const textLower = text.toLowerCase();
+  
+  if (keywordLower.length <= 3) {
+    // Use word boundaries for short keywords
+    const wordBoundaryRegex = new RegExp(
+      `\\b${keywordLower.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 
+      'i'
+    );
+    return wordBoundaryRegex.test(textLower);
+  } else {
+    // For longer keywords, simple includes is fine
+    return textLower.includes(keywordLower);
+  }
+}
+
+/**
+ * Find the single primary asset for a news article with confidence scoring
+ * Returns null if no asset matches with sufficient confidence (>= 40 for non-blocking inference)
+ * 
+ * Scoring:
+ * - Headline keyword match: +40 points
+ * - Description keyword match: +20 points
+ * - Multiple keyword matches accumulate
+ * - Proxy assets get 15% penalty
+ * - Minimum 40% confidence to return a match (lowered from 70% for non-blocking inference)
+ * 
+ * @param headline - Article headline
+ * @param description - Article description (optional)
+ * @param availablePairs - Optional set of available pairs to filter by (for speed optimization)
+ */
+export function findPrimaryAsset(
+  headline: string, 
+  description: string | null,
+  availablePairs?: Set<string>
+): AssetMatch | null {
+  const text = `${headline} ${description || ''}`.toLowerCase();
+  const headlineOnly = headline.toLowerCase();
+  
+  const matches: AssetMatch[] = [];
+  
+  // Pre-filter pairs if availablePairs is provided (optimization for Avantis-only matching)
+  // SAFETY: Only use availablePairs filter if it has a reasonable number of pairs (>10)
+  // If empty or too small, fall back to all TRADING_PAIRS to avoid filtering out everything
+  const pairsToCheck = availablePairs && availablePairs.size > 10
+    ? TRADING_PAIRS.filter(p => availablePairs.has(p.pair))
+    : TRADING_PAIRS;
+  
+  // Log if we're using filtered vs all pairs (for debugging)
+  if (availablePairs && availablePairs.size <= 10) {
+    console.warn(`[findPrimaryAsset] ⚠️ availablePairs has only ${availablePairs.size} pairs, using all TRADING_PAIRS instead`);
+  }
+  
+  for (const pair of pairsToCheck) {
+    let score = 0;
+    const matched: string[] = [];
+    
+    for (const keyword of pair.keywords) {
+      const keywordLower = keyword.toLowerCase();
+      const inHeadline = matchKeyword(headlineOnly, keywordLower);
+      const inText = !inHeadline && matchKeyword(text, keywordLower);
+      
+      if (inHeadline) {
+        score += 40; // Headline match = high confidence
+        matched.push(keyword);
+      } else if (inText) {
+        score += 20; // Description match = medium confidence
+        matched.push(keyword);
+      }
+    }
+    
+    if (score === 0) continue;
+    
+    // Penalize proxy assets slightly (15% reduction)
+    if (pair.isProxy) {
+      score = Math.floor(score * 0.85);
+    }
+    
+    // Cap at 100
+    const confidence = Math.min(100, score);
+    
+    // Debug: Log scores that are close but below threshold (for troubleshooting)
+    if (confidence >= 30 && confidence < 40 && matches.length === 0) {
+      // Only log first few to avoid spam
+      const debugCount = (globalThis as any).__debugMatchCount || 0;
+      if (debugCount < 3) {
+        console.log(`[findPrimaryAsset] Near-miss: "${headline.substring(0, 60)}..." scored ${confidence} for ${pair.pair} (matched: ${matched.join(', ')})`);
+        (globalThis as any).__debugMatchCount = debugCount + 1;
+      }
+    }
+    
+    // Only include if confidence >= 40 (lowered from 70% for non-blocking inference)
+    if (confidence >= 40) {
+      matches.push({
+        pair: pair.pair,
+        confidence,
+        matchedKeywords: matched,
+        isProxy: pair.isProxy || false,
+        category: pair.category,
+      });
+    }
+  }
+  
+  // Return highest confidence match only (single primary asset)
+  if (matches.length === 0) return null;
+  
+  // Sort by confidence descending, prefer non-proxy assets when tied
+  matches.sort((a, b) => {
+    if (b.confidence !== a.confidence) return b.confidence - a.confidence;
+    // Prefer non-proxy when confidence is equal
+    if (a.isProxy !== b.isProxy) return a.isProxy ? 1 : -1;
+    return 0;
+  });
+  
+  return matches[0];
+}
+
+/**
+ * Find relevant trading pairs for a news article (legacy function)
+ * Kept for backward compatibility
  */
 export function findRelevantPairs(headline: string, description: string | null): TradingPair[] {
   const text = `${headline} ${description || ''}`.toLowerCase();
@@ -123,23 +328,7 @@ export function findRelevantPairs(headline: string, description: string | null):
   
   for (const pair of TRADING_PAIRS) {
     for (const keyword of pair.keywords) {
-      const keywordLower = keyword.toLowerCase();
-      
-      // For short keywords (2-3 chars), use word boundaries to avoid false positives
-      // For longer keywords, use simple includes
-      let matches = false;
-      
-      if (keywordLower.length <= 3) {
-        // Use word boundaries for short keywords to avoid matching within other words
-        // e.g., "op" should match "optimism" or "op token" but not "operations" or "stop"
-        const wordBoundaryRegex = new RegExp(`\\b${keywordLower.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
-        matches = wordBoundaryRegex.test(text);
-      } else {
-        // For longer keywords, simple includes is fine
-        matches = text.includes(keywordLower);
-      }
-      
-      if (matches) {
+      if (matchKeyword(text, keyword)) {
         relevant.push(pair);
         break; // Only add once per pair
       }
@@ -151,9 +340,10 @@ export function findRelevantPairs(headline: string, description: string | null):
 
 /**
  * Check if news is relevant to any trading pair
+ * Now uses confidence-based matching with 70% threshold
  */
 export function isRelevantToTradingPairs(headline: string, description: string | null): boolean {
-  return findRelevantPairs(headline, description).length > 0;
+  return findPrimaryAsset(headline, description) !== null;
 }
 
 /**
@@ -173,4 +363,3 @@ export function mapPairCategoryToNewsCategory(pairCategory: TradingPair['categor
   };
   return map[pairCategory] || 'trending';
 }
-

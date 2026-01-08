@@ -30,3 +30,7 @@ COMMENT ON COLUMN trades.privy_user_id IS 'Privy user ID for server-side transac
 COMMENT ON COLUMN trades.privy_wallet_address IS 'Privy wallet address for server-side transaction signing';
 
 
+
+
+
+

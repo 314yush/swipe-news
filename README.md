@@ -13,11 +13,12 @@ A mobile-first news trading web application where users swipe through financial 
 
 ## Architecture
 
-The application consists of three main components:
+The application consists of two main components:
 
 1. **Client** (`/client`): Next.js frontend application
 2. **Trading Service** (`/server/trading-service`): Python FastAPI service for building and executing trades
-3. **Supabase Edge Functions** (`/supabase/functions`): Deno functions for transaction building and trade execution
+
+All trading operations are handled directly by the Python service, which interfaces with the Avantis SDK.
 
 ## Prerequisites
 
@@ -84,17 +85,12 @@ PRIVY_APP_SECRET=your-privy-app-secret
 
 ### 4. Set Up Supabase (Optional)
 
-If you want to use Supabase for database features:
+If you want to use Supabase for database features (user authentication, news caching):
 
 1. Create a Supabase project at [supabase.com](https://supabase.com)
 2. Run the migrations in `/supabase/migrations` in order (001 through 010)
-3. Deploy the Edge Functions:
-   ```bash
-   cd supabase/functions
-   supabase functions deploy build-transaction
-   supabase functions deploy execute-trade
-   supabase functions deploy close-trade
-   ```
+
+**Note**: Edge Functions are no longer required. All trading operations are handled directly by the Python service.
 
 ### 5. Run the Application
 
@@ -139,10 +135,6 @@ news-swiper/
 │       ├── trader_privy.py  # Trading logic
 │       └── privy_signer.py  # Privy signing utilities
 └── supabase/
-    ├── functions/            # Deno Edge Functions
-    │   ├── build-transaction/
-    │   ├── execute-trade/
-    │   └── close-trade/
     └── migrations/           # Database migrations
 ```
 
@@ -213,8 +205,7 @@ The app uses keyword matching to detect trading pairs from news headlines. Suppo
 - **Animations**: Framer Motion
 - **Authentication**: Privy (Embedded Wallets)
 - **Backend**: Python FastAPI
-- **Database**: Supabase (PostgreSQL)
-- **Edge Functions**: Deno
+- **Database**: Supabase (PostgreSQL, optional)
 - **Blockchain**: Base Network (Ethereum L2)
 - **DEX**: Avantis Protocol
 
@@ -231,7 +222,7 @@ Make sure you've created a `.env.local` file in the `client` directory with your
 ### Supabase Connection Issues
 1. Verify your Supabase URL and key are correct
 2. Ensure you've run all migrations in order
-3. Check that Edge Functions are deployed if using cloud Supabase
+3. Note: Edge Functions are no longer required
 
 ## Deployment
 

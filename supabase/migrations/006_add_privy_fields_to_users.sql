@@ -20,3 +20,7 @@ SET privy_wallet_address = wallet_address
 WHERE privy_wallet_address IS NULL AND wallet_address IS NOT NULL;
 
 
+
+
+
+

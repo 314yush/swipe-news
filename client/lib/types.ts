@@ -2,16 +2,25 @@
  * Type definitions for SwipeTrader
  */
 
+export type Tier = 'A' | 'B';
+
 export interface NewsItem {
   id: string;
   headline: string;
   brief: string;
   source: string;
-  publishedAt: string;
+  publishedAt: string;          // RSS timestamp (unreliable - may be delayed/batched)
+  firstSeenAt?: string;          // When OUR system first observed this item (the clock we control)
   url?: string;
   category?: string;
   imageUrl?: string | null;
-  relevantPairs?: string[]; // Trading pairs this news is relevant to (e.g., ["BTC/USD", "ETH/USD"])
+  relevantPairs?: string[];      // Trading pairs this news is relevant to (legacy)
+  // New tiering fields
+  primaryAsset?: string;        // Single asset (e.g., "BTC/USD") - only Avantis-tradable
+  assetConfidence?: number;      // 0-100
+  isProxyAsset?: boolean;        // Whether primaryAsset is a proxy
+  tier?: Tier;                   // A or B
+  expiresAt?: string;            // firstSeenAt + 30 minutes
 }
 
 export interface Trade {
@@ -32,6 +41,9 @@ export interface Trade {
   openedAt: string;
   closedAt?: string;
   status: "active" | "closed";
+  marketIsOpen?: boolean;
+  pairIndex?: number;
+  tradeIndex?: number;
 }
 
 export interface TradeStats {
@@ -68,5 +80,3 @@ export interface PendingTrade {
   market: string;
   direction: "long" | "short";
 }
-
-

@@ -4,9 +4,30 @@ Refactored from trader.py to use Privy's server-side signing
 """
 
 import asyncio
+import os
+import ssl
 from typing import Optional
 from dataclasses import dataclass
 from enum import Enum
+
+# Configure SSL to use certifi certificates (fixes macOS SSL certificate issues)
+# This is necessary because Python on macOS may not have access to system certificates
+import certifi
+
+# Set SSL certificate file environment variables
+# These are used by requests, httpx, and other HTTP libraries
+os.environ.setdefault('SSL_CERT_FILE', certifi.where())
+os.environ.setdefault('REQUESTS_CA_BUNDLE', certifi.where())
+
+# Patch Python's default SSL context to use certifi certificates
+# This ensures all SSL connections use certifi's certificate bundle
+_original_create_default_context = ssl.create_default_context
+def _patched_create_default_context(*args, **kwargs):
+    """Create SSL context with certifi certificates."""
+    if 'cafile' not in kwargs:
+        kwargs['cafile'] = certifi.where()
+    return _original_create_default_context(*args, **kwargs)
+ssl.create_default_context = _patched_create_default_context
 
 from avantis_trader_sdk import TraderClient
 from avantis_trader_sdk.types import TradeInput, TradeInputOrderType
@@ -71,6 +92,9 @@ class AvantisTraderPrivy:
         if self._initialized:
             return
         
+        # Initialize TraderClient with RPC URL
+        # SSL certificate verification is handled globally via the SSL context patch
+        # at the top of this file, which ensures certifi certificates are used
         self.client = TraderClient(self.rpc_url)
         self.privy_signer = PrivySigner(self.privy_user_id, self.wallet_address)
         
@@ -108,7 +132,7 @@ class AvantisTraderPrivy:
         side: PositionSide,
         collateral: float,
         leverage: Optional[int] = None,
-        take_profit_percent: float = 100.0
+        take_profit_percent: float = 200.0  # Default to 200%
     ) -> dict:
         """
         Build an unsigned transaction for client-side signing.
@@ -118,7 +142,7 @@ class AvantisTraderPrivy:
             side: Position side (LONG or SHORT)
             collateral: Amount of USDC to use as collateral
             leverage: Leverage multiplier
-            take_profit_percent: Take profit percentage (default 100%)
+            take_profit_percent: Take profit percentage (default 200%)
             
         Returns:
             Dictionary with unsigned transaction data
@@ -324,7 +348,7 @@ class AvantisTraderPrivy:
         side: PositionSide,
         collateral: float,
         leverage: Optional[int] = None,
-        take_profit_percent: float = 100.0
+        take_profit_percent: float = 200.0  # Default to 200%
     ) -> TradeResult:
         """
         Open a leveraged trading position using Privy for signing.
@@ -334,7 +358,7 @@ class AvantisTraderPrivy:
             side: Position side (LONG or SHORT)
             collateral: Amount of USDC to use as collateral
             leverage: Leverage multiplier
-            take_profit_percent: Take profit percentage (default 100%)
+            take_profit_percent: Take profit percentage (default 200%)
             
         Returns:
             TradeResult with transaction details
