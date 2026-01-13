@@ -143,15 +143,16 @@ function PortfolioPage() {
         // Get unique markets from active trades, filter out:
         // - "Pair-X" placeholders
         // - Closed markets (marketIsOpen === false)
-        const markets = [...new Set(
-          activeTrades
-            .filter((trade: Trade) => {
-              // Only include trades where market is open
-              return trade.marketIsOpen !== false;
-            })
-            .map((trade: Trade) => trade.market)
-            .filter((market: string) => market && !market.startsWith('Pair-') && market !== 'Unknown')
-        )];
+        const marketList: string[] = activeTrades
+          .filter((trade: Trade) => {
+            // Only include trades where market is open
+            return trade.marketIsOpen !== false;
+          })
+          .map((trade: Trade) => trade.market)
+          .filter((market: string | undefined): market is string => 
+            typeof market === 'string' && market !== '' && !market.startsWith('Pair-') && market !== 'Unknown'
+          );
+        const markets: string[] = Array.from(new Set(marketList));
         
         if (markets.length === 0) {
           // No open markets to update - this is fine, just skip

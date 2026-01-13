@@ -83,7 +83,7 @@ export default function PositionCard({
   // Check if market is open (use provided value or check manually)
   const marketOpenStatus = marketIsOpen !== undefined 
     ? marketIsOpen 
-    : isMarketOpen(market).isOpen;
+    : (isMarketOpen(market) as { isOpen: boolean }).isOpen;
 
   return (
     <Card>
