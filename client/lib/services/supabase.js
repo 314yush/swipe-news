@@ -10,9 +10,11 @@ import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 // Create a placeholder client if env vars are not set (for development with mock data)
 let supabase = null;
+let supabaseService = null;
 
 if (supabaseUrl && supabaseKey) {
   supabase = createClient(supabaseUrl, supabaseKey, {
@@ -27,6 +29,16 @@ if (supabaseUrl && supabaseKey) {
   );
 }
 
+// Service role client for server-side operations (bypasses RLS)
+if (supabaseUrl && supabaseServiceKey) {
+  supabaseService = createClient(supabaseUrl, supabaseServiceKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  });
+}
+
 /**
  * Check if Supabase is configured
  */
@@ -35,11 +47,19 @@ export const isSupabaseConfigured = () => {
 };
 
 /**
- * Get the Supabase client
+ * Get the Supabase client (publishable key, respects RLS)
  * @returns {import('@supabase/supabase-js').SupabaseClient | null}
  */
 export const getSupabase = () => {
   return supabase;
+};
+
+/**
+ * Get the Supabase service role client (bypasses RLS, for server-side operations)
+ * @returns {import('@supabase/supabase-js').SupabaseClient | null}
+ */
+export const getSupabaseService = () => {
+  return supabaseService || supabase; // Fallback to regular client if service key not available
 };
 
 /**

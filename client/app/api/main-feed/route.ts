@@ -3,13 +3,11 @@
  * Returns articles for main feed (24-hour window)
  * Includes swipe interaction state
  * Groups by freshness buckets
+ * Uses global news snapshot from /api/news
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import {
-  getArticlesInWindow,
-  getStorageStats,
-} from '@/lib/services/articleStorage';
+import { refreshNewsIfNeeded } from '@/lib/services/newsRefresh';
 import { type NormalizedArticle } from '@/lib/services/articleNormalizer';
 
 /**
@@ -48,12 +46,19 @@ function groupByBucket(articles: NormalizedArticle[]): {
 
 export async function GET(request: NextRequest) {
   try {
+    // Refresh snapshot if bucket changed
+    const { bucket, articles: allArticles } = await refreshNewsIfNeeded();
+
     const limit = parseInt(request.nextUrl.searchParams.get('limit') || '100', 10);
     const category = request.nextUrl.searchParams.get('category');
     const interactions = getUserInteractions(request);
 
-    // Get articles from last 24 hours
-    const articles = getArticlesInWindow(24 * 60);
+    // Filter to last 24 hours
+    const cutoffTime = Date.now() - (24 * 60 * 60 * 1000);
+    const articles = allArticles.filter(article => {
+      const publishedAt = new Date(article.published_at).getTime();
+      return publishedAt >= cutoffTime;
+    });
 
     // Filter by category if specified
     let filteredArticles = articles;
@@ -118,7 +123,7 @@ export async function GET(request: NextRequest) {
         recent: buckets.recent.length,
         older: buckets.older.length,
       },
-      stats: getStorageStats(),
+      bucket,
       timestamp: new Date().toISOString(),
     });
   } catch (error) {

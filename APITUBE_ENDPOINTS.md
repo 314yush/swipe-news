@@ -100,3 +100,4 @@ Our current implementation using `/v1/news/everything` is the best choice becaus
 - [APITube Parameters](https://docs.apitube.io/platform/news-api/parameters)
 - [APITube Technical FAQ](https://docs.apitube.io/platform/news-api/technical-faq)
 
+

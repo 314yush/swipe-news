@@ -2,14 +2,11 @@
  * Swipe Feed API Route
  * Returns articles for swipe feed with hot→recent→older selection order
  * Never returns empty feed - falls back to older articles if needed
+ * Uses global news snapshot from /api/news
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import {
-  getAllArticles,
-  getArticlesByBucket,
-  getStorageStats,
-} from '@/lib/services/articleStorage';
+import { refreshNewsIfNeeded } from '@/lib/services/newsRefresh';
 import { type NormalizedArticle } from '@/lib/services/articleNormalizer';
 
 /**
@@ -106,21 +103,21 @@ function selectSwipeFeedArticles(
 
 export async function GET(request: NextRequest) {
   try {
+    // Refresh snapshot if bucket changed
+    const { bucket, articles: allArticles } = await refreshNewsIfNeeded();
+
     const limit = parseInt(request.nextUrl.searchParams.get('limit') || '25', 10);
     const swipedIds = getSwipedArticleIds(request);
 
-    // Get all articles from storage
-    const allArticles = getAllArticles();
-
     if (allArticles.length === 0) {
-      console.warn('[Swipe Feed] No articles in storage');
+      console.warn('[Swipe Feed] No articles in snapshot');
       return NextResponse.json({
         success: true,
         items: [],
         count: 0,
         nowShowingOlderNews: false,
         bucketBreakdown: { hot: 0, recent: 0, older: 0 },
-        stats: getStorageStats(),
+        bucket,
         timestamp: new Date().toISOString(),
       });
     }
@@ -158,10 +155,10 @@ export async function GET(request: NextRequest) {
       success: true,
       items,
       count: items.length,
-      nowShowingOlderNews,
-      bucketBreakdown,
-      stats: getStorageStats(),
-      timestamp: new Date().toISOString(),
+        nowShowingOlderNews,
+        bucketBreakdown,
+        bucket,
+        timestamp: new Date().toISOString(),
     });
   } catch (error) {
     console.error('[Swipe Feed] Error:', error);
